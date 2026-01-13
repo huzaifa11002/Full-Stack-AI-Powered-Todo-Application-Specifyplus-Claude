@@ -1,0 +1,389 @@
+openapi: 3.0.3
+info:
+  title: Better Auth JWT Authentication API
+  description: |
+    Authentication API for JWT-based user authentication using Better Auth (Next.js) and PyJWT (FastAPI).
+
+    **Authentication Flow**:
+    1. User signs up with email and password
+    2. Backend hashes password with bcrypt and stores user
+    3. Backend generates JWT token signed with BETTER_AUTH_SECRET
+    4. User receives token and stores it (localStorage or httpOnly cookie)
+    5. User includes token in Authorization header for protected API requests
+    6. Backend middleware verifies token and enforces user isolation
+
+    **Security**:
+    - Passwords hashed with bcrypt (cost factor 12+)
+    - JWT tokens signed with HS256 (HMAC-SHA256)
+    - 7-day token expiration
+    - User isolation enforced (JWT user_id must match URL user_id)
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@example.com
+
+servers:
+  - url: http://localhost:8000
+    description: Development server
+  - url: https://api.example.com
+    description: Production server
+
+tags:
+  - name: Authentication
+    description: User signup, signin, and token management
+
+paths:
+  /api/auth/signup:
+    post:
+      tags:
+        - Authentication
+      summary: User signup
+      description: |
+        Create a new user account with email and password. Returns JWT token on success.
+
+        **Validation**:
+        - Email must be valid format
+        - Email must be unique (not already registered)
+        - Password must be at least 8 characters
+        - Password must contain at least one number and one letter
+
+        **Process**:
+        1. Validate email format and uniqueness
+        2. Hash password with bcrypt (cost factor 12+)
+        3. Create user record in database
+        4. Generate JWT token (7-day expiration)
+        5. Return token and user data
+      operationId: signup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreate'
+            examples:
+              valid:
+                summary: Valid signup request
+                value:
+                  email: user@example.com
+                  password: password123
+                  username: John Doe
+              minimal:
+                summary: Minimal signup (no username)
+                value:
+                  email: user@example.com
+                  password: password123
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+              example:
+                access_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                token_type: bearer
+                user:
+                  id: 550e8400-e29b-41d4-a716-446655440000
+                  email: user@example.com
+                  username: John Doe
+                  is_active: true
+                  created_at: '2026-01-10T12:00:00Z'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                duplicate_email:
+                  summary: Email already registered
+                  value:
+                    detail: Email already registered
+                    status_code: 400
+                weak_password:
+                  summary: Password too weak
+                  value:
+                    detail: Password must be at least 8 characters
+                    status_code: 400
+                invalid_email:
+                  summary: Invalid email format
+                  value:
+                    detail: Invalid email format
+                    status_code: 400
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/auth/signin:
+    post:
+      tags:
+        - Authentication
+      summary: User signin
+      description: |
+        Authenticate user with email and password. Returns JWT token on success.
+
+        **Process**:
+        1. Query user by email
+        2. Verify password against bcrypt hash
+        3. Generate JWT token (7-day expiration)
+        4. Return token and user data
+
+        **Security**:
+        - Generic error message on failure (don't reveal if email exists)
+        - Rate limiting enforced (prevent brute force attacks)
+      operationId: signin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserLogin'
+            example:
+              email: user@example.com
+              password: password123
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+              example:
+                access_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                token_type: bearer
+                user:
+                  id: 550e8400-e29b-41d4-a716-446655440000
+                  email: user@example.com
+                  username: John Doe
+                  is_active: true
+                  created_at: '2026-01-10T12:00:00Z'
+        '401':
+          description: Authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                detail: Invalid credentials
+                status_code: 401
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/users/{user_id}/tasks:
+    get:
+      tags:
+        - Tasks (Protected)
+      summary: Get user's tasks
+      description: |
+        Retrieve all tasks for the authenticated user. Requires valid JWT token.
+
+        **Authentication**: Bearer token required
+        **Authorization**: JWT user_id must match URL user_id parameter
+      operationId: getTasks
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          description: User UUID (must match JWT user_id)
+          schema:
+            type: string
+            format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+      responses:
+        '200':
+          description: Tasks retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Task'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                no_token:
+                  summary: No token provided
+                  value:
+                    detail: Authentication required
+                    status_code: 401
+                invalid_token:
+                  summary: Invalid token
+                  value:
+                    detail: Invalid token
+                    status_code: 401
+                expired_token:
+                  summary: Token expired
+                  value:
+                    detail: Token has expired
+                    status_code: 401
+        '403':
+          description: Access denied (user mismatch)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                detail: Access denied: cannot access other users' resources
+                status_code: 403
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT token obtained from /api/auth/signup or /api/auth/signin.
+
+        **Format**: Authorization: Bearer <token>
+
+        **Token Structure**:
+        - Header: {"alg": "HS256", "typ": "JWT"}
+        - Payload: {"user_id": "uuid", "email": "string", "iat": number, "exp": number}
+        - Signature: HMAC-SHA256(header + payload, BETTER_AUTH_SECRET)
+
+  schemas:
+    UserCreate:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          description: User email address (unique)
+          example: user@example.com
+        password:
+          type: string
+          format: password
+          minLength: 8
+          description: User password (min 8 chars, must contain number and letter)
+          example: password123
+        username:
+          type: string
+          maxLength: 50
+          description: Display name (optional)
+          example: John Doe
+
+    UserLogin:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          description: User email address
+          example: user@example.com
+        password:
+          type: string
+          format: password
+          description: User password
+          example: password123
+
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: User UUID
+          example: 550e8400-e29b-41d4-a716-446655440000
+        email:
+          type: string
+          format: email
+          description: User email address
+          example: user@example.com
+        username:
+          type: string
+          nullable: true
+          description: Display name (optional)
+          example: John Doe
+        is_active:
+          type: boolean
+          description: Account active status
+          example: true
+        created_at:
+          type: string
+          format: date-time
+          description: Account creation timestamp (UTC)
+          example: '2026-01-10T12:00:00Z'
+
+    TokenResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+          description: JWT access token (7-day expiration)
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNTUwZTg0MDAtZTI5Yi00MWQ0LWE3MTYtNDQ2NjU1NDQwMDAwIiwiZW1haWwiOiJ1c2VyQGV4YW1wbGUuY29tIiwiaWF0IjoxNzA0OTMxMjAwLCJleHAiOjE3MDU1MzYwMDB9.signature
+        token_type:
+          type: string
+          description: Token type (always "bearer")
+          example: bearer
+        user:
+          $ref: '#/components/schemas/UserResponse'
+
+    Task:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Task ID
+          example: 1
+        user_id:
+          type: string
+          format: uuid
+          description: Owner user UUID
+          example: 550e8400-e29b-41d4-a716-446655440000
+        title:
+          type: string
+          maxLength: 200
+          description: Task title
+          example: Buy groceries
+        description:
+          type: string
+          maxLength: 1000
+          nullable: true
+          description: Task description (optional)
+          example: Milk, eggs, bread
+        is_completed:
+          type: boolean
+          description: Completion status
+          example: false
+        created_at:
+          type: string
+          format: date-time
+          description: Task creation timestamp (UTC)
+          example: '2026-01-10T12:00:00Z'
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp (UTC)
+          example: '2026-01-10T12:00:00Z'
+
+    ErrorResponse:
+      type: object
+      properties:
+        detail:
+          type: string
+          description: Error message
+          example: Authentication required
+        status_code:
+          type: integer
+          description: HTTP status code
+          example: 401

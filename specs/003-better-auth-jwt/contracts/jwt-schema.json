@@ -1,0 +1,107 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "JWT Token Structure",
+  "description": "JSON Web Token structure for Better Auth JWT authentication integration",
+  "type": "object",
+  "required": ["header", "payload", "signature"],
+  "properties": {
+    "header": {
+      "type": "object",
+      "description": "JWT header (automatically added by JWT library)",
+      "required": ["alg", "typ"],
+      "properties": {
+        "alg": {
+          "type": "string",
+          "enum": ["HS256"],
+          "description": "Algorithm: HMAC with SHA-256"
+        },
+        "typ": {
+          "type": "string",
+          "enum": ["JWT"],
+          "description": "Type: JSON Web Token"
+        }
+      }
+    },
+    "payload": {
+      "type": "object",
+      "description": "JWT payload with custom claims",
+      "required": ["user_id", "email", "iat", "exp"],
+      "properties": {
+        "user_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "User UUID from database",
+          "example": "550e8400-e29b-41d4-a716-446655440000"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "User email address",
+          "example": "user@example.com"
+        },
+        "iat": {
+          "type": "integer",
+          "description": "Issued at (Unix timestamp in seconds)",
+          "example": 1704931200
+        },
+        "exp": {
+          "type": "integer",
+          "description": "Expiration (Unix timestamp in seconds, iat + 604800)",
+          "example": 1705536000
+        }
+      }
+    },
+    "signature": {
+      "type": "string",
+      "description": "HMAC-SHA256 signature: HMAC-SHA256(base64UrlEncode(header) + '.' + base64UrlEncode(payload), BETTER_AUTH_SECRET)",
+      "example": "4pcPyMD09olPSyXnrXCjTwXyr4BsezdI1AVTmud2fU4"
+    }
+  },
+  "examples": [
+    {
+      "header": {
+        "alg": "HS256",
+        "typ": "JWT"
+      },
+      "payload": {
+        "user_id": "550e8400-e29b-41d4-a716-446655440000",
+        "email": "user@example.com",
+        "iat": 1704931200,
+        "exp": 1705536000
+      },
+      "signature": "4pcPyMD09olPSyXnrXCjTwXyr4BsezdI1AVTmud2fU4"
+    }
+  ],
+  "definitions": {
+    "EncodedToken": {
+      "type": "string",
+      "description": "Base64URL-encoded JWT token in format: header.payload.signature",
+      "pattern": "^[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+$",
+      "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNTUwZTg0MDAtZTI5Yi00MWQ0LWE3MTYtNDQ2NjU1NDQwMDAwIiwiZW1haWwiOiJ1c2VyQGV4YW1wbGUuY29tIiwiaWF0IjoxNzA0OTMxMjAwLCJleHAiOjE3MDU1MzYwMDB9.4pcPyMD09olPSyXnrXCjTwXyr4BsezdI1AVTmud2fU4"
+    }
+  },
+  "notes": {
+    "security": [
+      "Tokens are signed with BETTER_AUTH_SECRET (32+ characters)",
+      "Signature verification prevents token tampering",
+      "Expiration enforced by PyJWT (7 days from iat)",
+      "No sensitive data in payload (email is not sensitive)",
+      "Token size: ~200-300 bytes (well under 1KB limit)"
+    ],
+    "transmission": [
+      "Client → Server: Authorization: Bearer <token> header",
+      "Server → Client: JSON response body on signup/signin"
+    ],
+    "storage": [
+      "Development: localStorage.setItem('token', token)",
+      "Production: httpOnly cookies (Set-Cookie header)"
+    ],
+    "validation": [
+      "Verify signature with BETTER_AUTH_SECRET",
+      "Check expiration (exp > current timestamp)",
+      "Validate user_id format (UUID)",
+      "Validate email format",
+      "Ensure iat <= current timestamp (not issued in future)"
+    ]
+  }
+}
