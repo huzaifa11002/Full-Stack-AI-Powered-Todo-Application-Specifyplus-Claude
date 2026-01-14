@@ -1,0 +1,395 @@
+{
+  "mcp_version": "1.0.0",
+  "server": {
+    "name": "todo-mcp-server",
+    "version": "1.0.0",
+    "description": "MCP server for task management operations"
+  },
+  "tools": [
+    {
+      "name": "add_task",
+      "description": "Create a new task for the user. Use this when the user wants to add, create, remember, or save a new task. Extract the task title from the user's message and include any additional details in the description.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "description": "The user ID who owns the task. This is automatically provided by the system."
+          },
+          "title": {
+            "type": "string",
+            "description": "The task title or main description. Should be concise and clear.",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "description": {
+            "type": "string",
+            "description": "Additional details about the task (optional). Use this for context, notes, or extended information.",
+            "maxLength": 1000
+          }
+        },
+        "required": ["user_id", "title"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "task_id": {
+            "type": "integer",
+            "description": "The ID of the newly created task"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["created", "failed"],
+            "description": "Status of the operation"
+          },
+          "title": {
+            "type": "string",
+            "description": "The title of the created task"
+          },
+          "error": {
+            "type": "string",
+            "description": "Error message if operation failed"
+          }
+        }
+      },
+      "examples": [
+        {
+          "input": {
+            "user_id": "1",
+            "title": "Buy groceries"
+          },
+          "output": {
+            "task_id": 5,
+            "status": "created",
+            "title": "Buy groceries"
+          }
+        },
+        {
+          "input": {
+            "user_id": "1",
+            "title": "Call mom",
+            "description": "Discuss weekend plans"
+          },
+          "output": {
+            "task_id": 6,
+            "status": "created",
+            "title": "Call mom"
+          }
+        }
+      ]
+    },
+    {
+      "name": "list_tasks",
+      "description": "Retrieve the user's tasks with optional status filter. Use this when the user wants to see, show, list, or display their tasks. You can filter by status: 'all' (default), 'pending' (incomplete tasks), or 'completed' (finished tasks).",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "description": "The user ID. This is automatically provided by the system."
+          },
+          "status": {
+            "type": "string",
+            "enum": ["all", "pending", "completed"],
+            "default": "all",
+            "description": "Filter tasks by completion status. 'all' shows everything, 'pending' shows only incomplete tasks, 'completed' shows only finished tasks."
+          }
+        },
+        "required": ["user_id"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "tasks": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {"type": "integer"},
+                "title": {"type": "string"},
+                "description": {"type": "string"},
+                "completed": {"type": "boolean"},
+                "created_at": {"type": "string", "format": "date-time"}
+              }
+            },
+            "description": "Array of task objects"
+          },
+          "count": {
+            "type": "integer",
+            "description": "Total number of tasks returned"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["success", "failed"],
+            "description": "Status of the operation"
+          },
+          "error": {
+            "type": "string",
+            "description": "Error message if operation failed"
+          }
+        }
+      },
+      "examples": [
+        {
+          "input": {
+            "user_id": "1",
+            "status": "all"
+          },
+          "output": {
+            "tasks": [
+              {
+                "id": 1,
+                "title": "Buy groceries",
+                "description": "",
+                "completed": false,
+                "created_at": "2026-01-13T10:00:00Z"
+              },
+              {
+                "id": 2,
+                "title": "Call mom",
+                "description": "Discuss weekend plans",
+                "completed": false,
+                "created_at": "2026-01-13T11:00:00Z"
+              }
+            ],
+            "count": 2,
+            "status": "success"
+          }
+        },
+        {
+          "input": {
+            "user_id": "1",
+            "status": "pending"
+          },
+          "output": {
+            "tasks": [
+              {
+                "id": 1,
+                "title": "Buy groceries",
+                "description": "",
+                "completed": false,
+                "created_at": "2026-01-13T10:00:00Z"
+              }
+            ],
+            "count": 1,
+            "status": "success"
+          }
+        }
+      ]
+    },
+    {
+      "name": "complete_task",
+      "description": "Mark a task as completed. Use this when the user indicates they have finished, completed, or done a task. Requires the task ID to identify which task to complete.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "description": "The user ID. This is automatically provided by the system."
+          },
+          "task_id": {
+            "type": "integer",
+            "description": "The ID of the task to mark as complete. If the user doesn't provide a task ID, you may need to list tasks first to identify the correct one."
+          }
+        },
+        "required": ["user_id", "task_id"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "task_id": {
+            "type": "integer",
+            "description": "The ID of the completed task"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["completed", "failed"],
+            "description": "Status of the operation"
+          },
+          "title": {
+            "type": "string",
+            "description": "The title of the completed task"
+          },
+          "error": {
+            "type": "string",
+            "description": "Error message if operation failed"
+          }
+        }
+      },
+      "examples": [
+        {
+          "input": {
+            "user_id": "1",
+            "task_id": 5
+          },
+          "output": {
+            "task_id": 5,
+            "status": "completed",
+            "title": "Buy groceries"
+          }
+        },
+        {
+          "input": {
+            "user_id": "1",
+            "task_id": 999
+          },
+          "output": {
+            "status": "failed",
+            "error": "Task not found"
+          }
+        }
+      ]
+    },
+    {
+      "name": "delete_task",
+      "description": "Remove a task from the list. Use this when the user wants to delete, remove, cancel, or get rid of a task. Requires the task ID to identify which task to delete.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "description": "The user ID. This is automatically provided by the system."
+          },
+          "task_id": {
+            "type": "integer",
+            "description": "The ID of the task to delete. If the user doesn't provide a task ID, you may need to list tasks first to identify the correct one."
+          }
+        },
+        "required": ["user_id", "task_id"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "task_id": {
+            "type": "integer",
+            "description": "The ID of the deleted task"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["deleted", "failed"],
+            "description": "Status of the operation"
+          },
+          "title": {
+            "type": "string",
+            "description": "The title of the deleted task"
+          },
+          "error": {
+            "type": "string",
+            "description": "Error message if operation failed"
+          }
+        }
+      },
+      "examples": [
+        {
+          "input": {
+            "user_id": "1",
+            "task_id": 5
+          },
+          "output": {
+            "task_id": 5,
+            "status": "deleted",
+            "title": "Buy groceries"
+          }
+        },
+        {
+          "input": {
+            "user_id": "1",
+            "task_id": 999
+          },
+          "output": {
+            "status": "failed",
+            "error": "Task not found"
+          }
+        }
+      ]
+    },
+    {
+      "name": "update_task",
+      "description": "Modify a task's title or description. Use this when the user wants to change, update, modify, rename, or edit a task. Requires the task ID and at least one field to update (title or description).",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "description": "The user ID. This is automatically provided by the system."
+          },
+          "task_id": {
+            "type": "integer",
+            "description": "The ID of the task to update. If the user doesn't provide a task ID, you may need to list tasks first to identify the correct one."
+          },
+          "title": {
+            "type": "string",
+            "description": "New task title (optional). Only provide if the user wants to change the title.",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "description": {
+            "type": "string",
+            "description": "New task description (optional). Only provide if the user wants to change the description.",
+            "maxLength": 1000
+          }
+        },
+        "required": ["user_id", "task_id"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "task_id": {
+            "type": "integer",
+            "description": "The ID of the updated task"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["updated", "failed"],
+            "description": "Status of the operation"
+          },
+          "title": {
+            "type": "string",
+            "description": "The updated title of the task"
+          },
+          "error": {
+            "type": "string",
+            "description": "Error message if operation failed"
+          }
+        }
+      },
+      "examples": [
+        {
+          "input": {
+            "user_id": "1",
+            "task_id": 5,
+            "title": "Buy groceries and cook dinner"
+          },
+          "output": {
+            "task_id": 5,
+            "status": "updated",
+            "title": "Buy groceries and cook dinner"
+          }
+        },
+        {
+          "input": {
+            "user_id": "1",
+            "task_id": 5,
+            "description": "Get milk, eggs, bread, and vegetables"
+          },
+          "output": {
+            "task_id": 5,
+            "status": "updated",
+            "title": "Buy groceries"
+          }
+        },
+        {
+          "input": {
+            "user_id": "1",
+            "task_id": 999,
+            "title": "New title"
+          },
+          "output": {
+            "status": "failed",
+            "error": "Task not found"
+          }
+        }
+      ]
+    }
+  ]
+}

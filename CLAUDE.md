@@ -214,6 +214,8 @@ See `.specify/memory/constitution.md` for code quality, testing, performance, se
 - Neon Serverless PostgreSQL (cloud-hosted, PostgreSQL-compatible) (001-fastapi-todo-api)
 - TypeScript 5.0+, Node.js 18+ + Next.js 16+, React 18+, Tailwind CSS 3+, Better Auth (client), Axios, react-hot-toast (002-nextjs-auth-frontend)
 - Browser localStorage for JWT tokens (per spec decision), API backend for data persistence (002-nextjs-auth-frontend)
+- Python 3.11+ + FastAPI (latest stable), OpenAI Agents SDK, Official MCP SDK, SQLModel, Pydantic v2, psycopg2-binary, python-dotenv, uvicorn[standard] (001-mcp-ai-chat)
+- Neon Serverless PostgreSQL (existing database extended with Conversation and Message tables) (001-mcp-ai-chat)
 
 ## Recent Changes
 - 001-fastapi-todo-api: Added Python 3.11+ + FastAPI (latest stable), SQLModel, Pydantic v2, psycopg2-binary, python-dotenv, uvicorn[standard]

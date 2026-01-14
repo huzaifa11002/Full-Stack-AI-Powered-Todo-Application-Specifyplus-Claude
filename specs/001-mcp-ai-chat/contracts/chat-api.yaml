@@ -1,0 +1,289 @@
+openapi: 3.0.0
+info:
+  title: AI Chat API
+  version: 1.0.0
+  description: |
+    AI-powered conversational interface for task management using MCP and OpenAI Agents SDK.
+
+    This API enables users to manage their tasks through natural language conversation.
+    The system maintains conversation history and uses AI to interpret user intent and
+    invoke appropriate task management operations.
+
+servers:
+  - url: http://localhost:8000
+    description: Local development server
+  - url: https://api.example.com
+    description: Production server
+
+tags:
+  - name: chat
+    description: AI chat conversation endpoints
+
+paths:
+  /api/{user_id}/chat:
+    post:
+      tags:
+        - chat
+      summary: Send message to AI chat assistant
+      description: |
+        Send a message to the AI chat assistant. The assistant will interpret the message,
+        invoke appropriate task management tools, and return a conversational response.
+
+        **Stateless Architecture**: Each request fetches conversation history from the database,
+        processes the new message, and stores the response. No conversation state is maintained
+        in memory between requests.
+
+        **Authentication**: Requires valid JWT token. User ID in path must match authenticated user.
+
+        **Tool Invocation**: The assistant may invoke one or more task management tools
+        (add_task, list_tasks, complete_task, delete_task, update_task) based on user intent.
+        All tool calls are logged and returned in the response.
+
+      operationId: sendChatMessage
+
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          description: ID of the authenticated user
+          schema:
+            type: integer
+            example: 1
+
+      security:
+        - bearerAuth: []
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - message
+              properties:
+                conversation_id:
+                  type: integer
+                  nullable: true
+                  description: |
+                    Optional conversation ID to continue an existing conversation.
+                    If not provided, a new conversation will be created.
+                  example: 42
+                message:
+                  type: string
+                  description: User's message to the AI assistant
+                  minLength: 1
+                  maxLength: 2000
+                  example: "Add a task to buy groceries"
+            examples:
+              new_conversation:
+                summary: Start new conversation
+                value:
+                  message: "Show me my tasks"
+              continue_conversation:
+                summary: Continue existing conversation
+                value:
+                  conversation_id: 42
+                  message: "Mark task 3 as complete"
+
+      responses:
+        '200':
+          description: Successful response from AI assistant
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - conversation_id
+                  - response
+                  - tool_calls
+                properties:
+                  conversation_id:
+                    type: integer
+                    description: ID of the conversation (new or existing)
+                    example: 42
+                  response:
+                    type: string
+                    description: AI assistant's natural language response
+                    example: "✓ I've added 'Buy groceries' to your task list."
+                  tool_calls:
+                    type: array
+                    description: List of tools invoked during this interaction
+                    items:
+                      type: object
+                      required:
+                        - tool
+                        - params
+                        - result
+                      properties:
+                        tool:
+                          type: string
+                          description: Name of the tool that was invoked
+                          enum:
+                            - add_task
+                            - list_tasks
+                            - complete_task
+                            - delete_task
+                            - update_task
+                          example: "add_task"
+                        params:
+                          type: object
+                          description: Parameters passed to the tool
+                          example:
+                            user_id: "1"
+                            title: "Buy groceries"
+                        result:
+                          type: object
+                          description: Result returned by the tool
+                          example:
+                            task_id: 5
+                            status: "created"
+                            title: "Buy groceries"
+              examples:
+                task_created:
+                  summary: Task creation response
+                  value:
+                    conversation_id: 42
+                    response: "✓ I've added 'Buy groceries' to your task list."
+                    tool_calls:
+                      - tool: "add_task"
+                        params:
+                          user_id: "1"
+                          title: "Buy groceries"
+                        result:
+                          task_id: 5
+                          status: "created"
+                          title: "Buy groceries"
+                tasks_listed:
+                  summary: Task listing response
+                  value:
+                    conversation_id: 42
+                    response: "Here are your tasks:\n1. Buy groceries\n2. Call mom\n3. Finish report"
+                    tool_calls:
+                      - tool: "list_tasks"
+                        params:
+                          user_id: "1"
+                          status: "all"
+                        result:
+                          tasks:
+                            - id: 1
+                              title: "Buy groceries"
+                              completed: false
+                            - id: 2
+                              title: "Call mom"
+                              completed: false
+                            - id: 3
+                              title: "Finish report"
+                              completed: false
+                          count: 3
+                          status: "success"
+
+        '400':
+          description: Bad request - invalid input
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    example: "Message cannot be empty"
+
+        '403':
+          description: Forbidden - user_id does not match authenticated user
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    example: "Access denied"
+
+        '404':
+          description: Not found - conversation_id does not exist or does not belong to user
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    example: "Conversation not found"
+
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    example: "Failed to process message"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT token issued by Better Auth.
+        Include in Authorization header as: Bearer <token>
+
+  schemas:
+    ChatRequest:
+      type: object
+      required:
+        - message
+      properties:
+        conversation_id:
+          type: integer
+          nullable: true
+        message:
+          type: string
+          minLength: 1
+          maxLength: 2000
+
+    ChatResponse:
+      type: object
+      required:
+        - conversation_id
+        - response
+        - tool_calls
+      properties:
+        conversation_id:
+          type: integer
+        response:
+          type: string
+        tool_calls:
+          type: array
+          items:
+            $ref: '#/components/schemas/ToolCall'
+
+    ToolCall:
+      type: object
+      required:
+        - tool
+        - params
+        - result
+      properties:
+        tool:
+          type: string
+          enum:
+            - add_task
+            - list_tasks
+            - complete_task
+            - delete_task
+            - update_task
+        params:
+          type: object
+        result:
+          type: object
+
+    Error:
+      type: object
+      properties:
+        detail:
+          type: string

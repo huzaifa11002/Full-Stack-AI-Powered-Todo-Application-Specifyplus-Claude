@@ -17,7 +17,7 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
-from app.routers import tasks, auth
+from app.routers import tasks, auth, chat
 from app.database import engine
 from app.middleware.auth import JWTAuthMiddleware
 from sqlmodel import Session
@@ -76,6 +76,7 @@ app.add_middleware(JWTAuthMiddleware)
 # Include routers
 app.include_router(auth.router)  # Auth router already has /api/auth prefix
 app.include_router(tasks.router, prefix="/api", tags=["tasks"])
+app.include_router(chat.router)  # Chat router already has /api prefix
 
 
 @app.get("/", tags=["root"])
