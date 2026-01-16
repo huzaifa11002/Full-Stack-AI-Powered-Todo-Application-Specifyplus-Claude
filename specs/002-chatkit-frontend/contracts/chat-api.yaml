@@ -1,0 +1,204 @@
+openapi: 3.0.0
+info:
+  title: Chat API Contract (Reference)
+  version: 1.0.0
+  description: |
+    Backend API contract for chat endpoint (already implemented in feature 001-mcp-ai-chat).
+    This is a reference document for frontend integration.
+
+servers:
+  - url: http://localhost:8000
+    description: Local development server
+  - url: https://api.example.com
+    description: Production server
+
+paths:
+  /api/{user_id}/chat:
+    post:
+      summary: Send message to AI chat assistant
+      description: |
+        Send a message to the AI chat assistant. The assistant will interpret the message,
+        invoke appropriate task management tools, and return a conversational response.
+
+        **Authentication**: Requires valid JWT token in Authorization header.
+        **User Isolation**: user_id in path must match authenticated user.
+
+      operationId: sendChatMessage
+
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          description: ID of the authenticated user
+          schema:
+            type: integer
+            example: 1
+
+      security:
+        - bearerAuth: []
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - message
+              properties:
+                conversation_id:
+                  type: integer
+                  nullable: true
+                  description: |
+                    Optional conversation ID to continue an existing conversation.
+                    If not provided, a new conversation will be created.
+                  example: 42
+                message:
+                  type: string
+                  description: User's message to the AI assistant
+                  minLength: 1
+                  maxLength: 2000
+                  example: "Add a task to buy groceries"
+
+      responses:
+        '200':
+          description: Successful response from AI assistant
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - conversation_id
+                  - response
+                  - tool_calls
+                properties:
+                  conversation_id:
+                    type: integer
+                    description: ID of the conversation (new or existing)
+                    example: 42
+                  response:
+                    type: string
+                    description: AI assistant's response message
+                    example: "I've added 'Buy groceries' to your task list."
+                  tool_calls:
+                    type: array
+                    description: List of tool calls made during this interaction
+                    items:
+                      type: object
+                      required:
+                        - tool
+                        - params
+                        - result
+                      properties:
+                        tool:
+                          type: string
+                          description: Name of the tool that was invoked
+                          example: "add_task"
+                        params:
+                          type: object
+                          description: Parameters passed to the tool
+                          example:
+                            user_id: 1
+                            title: "Buy groceries"
+                            description: "Milk, eggs, bread"
+                        result:
+                          type: object
+                          description: Result returned by the tool
+                          example:
+                            id: 5
+                            title: "Buy groceries"
+                            is_completed: false
+
+        '400':
+          description: Bad Request - Invalid message format
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    example: "Message cannot be empty or whitespace-only"
+
+        '401':
+          description: Unauthorized - Invalid or expired JWT token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    example: "Invalid authentication credentials"
+
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    example: "Failed to process chat request"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token from Better Auth authentication
+
+  schemas:
+    ToolCall:
+      type: object
+      required:
+        - tool
+        - params
+        - result
+      properties:
+        tool:
+          type: string
+          description: Tool name
+          enum:
+            - add_task
+            - list_tasks
+            - complete_task
+            - delete_task
+            - update_task
+        params:
+          type: object
+          description: Tool parameters (varies by tool)
+        result:
+          type: object
+          description: Tool result (varies by tool)
+
+    ChatRequest:
+      type: object
+      required:
+        - message
+      properties:
+        conversation_id:
+          type: integer
+          nullable: true
+        message:
+          type: string
+          minLength: 1
+          maxLength: 2000
+
+    ChatResponse:
+      type: object
+      required:
+        - conversation_id
+        - response
+        - tool_calls
+      properties:
+        conversation_id:
+          type: integer
+        response:
+          type: string
+        tool_calls:
+          type: array
+          items:
+            $ref: '#/components/schemas/ToolCall'

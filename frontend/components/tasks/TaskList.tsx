@@ -11,7 +11,7 @@ import TaskItem from './TaskItem';
 
 interface TaskListProps {
   tasks: Task[];
-  onToggleComplete: (taskId: string) => void;
+  onToggleComplete: (taskId: number) => void;
   onEdit?: (task: Task) => void;
   onDelete?: (task: Task) => void;
 }

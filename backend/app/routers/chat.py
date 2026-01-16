@@ -15,7 +15,7 @@ from app.database import get_session
 from app.models import Conversation, Message, User
 from app.schemas import ChatRequest, ChatResponse, ToolCallInfo
 from app.dependencies.auth import get_current_user
-from agents.runner import run_agent_conversation
+from chat_agents.runner import run_agent_conversation
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -154,7 +154,7 @@ def store_messages(
 async def chat(
     user_id: int,
     request: ChatRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),
     session: Session = Depends(get_session)
 ) -> ChatResponse:
     """Send message to AI chat assistant.
@@ -166,7 +166,7 @@ async def chat(
     Args:
         user_id: ID of the user (must match authenticated user)
         request: Chat request with message and optional conversation_id
-        current_user: Authenticated user from JWT token
+        current_user: Authenticated user from JWT token (dict)
         session: Database session
 
     Returns:
@@ -176,7 +176,7 @@ async def chat(
         HTTPException: If user_id doesn't match authenticated user or other errors
     """
     # Verify user_id matches authenticated user
-    if current_user.id != user_id:
+    if current_user["user_id"] != user_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User ID does not match authenticated user"

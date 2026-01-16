@@ -1,29 +1,32 @@
-"""OpenAI client configuration and system prompt.
-
-This module configures the OpenAI client and defines the system prompt
-for the AI agent.
-"""
-
 import os
-from openai import OpenAI
-from dotenv import load_dotenv
+from dotenv import load_dotenv #install library command (pip i dotenv)
+from agents import AsyncOpenAI, OpenAIChatCompletionsModel, set_tracing_disabled #install library command (pip i openai-agents)
 
-# Load environment variables
+
+# Load environment variables from .env file
 load_dotenv()
 
-# OpenAI client configuration
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-if not OPENAI_API_KEY:
-    raise ValueError("OPENAI_API_KEY environment variable is required")
+gemini_api_key = os.getenv("GEMINI_API_KEY") #get gemini api key from .env file
 
-openai_client = OpenAI(api_key=OPENAI_API_KEY)
+#Gemini API key not found condition
+if not gemini_api_key:
+    raise ValueError("GEMINI_API_KEY environment variable is not set. Please set it in your .env file.")
 
-# Agent configuration
-AGENT_MODEL = os.getenv("AGENT_MODEL", "gpt-4o-mini")
-AGENT_TEMPERATURE = float(os.getenv("AGENT_TEMPERATURE", "0.7"))
-AGENT_MAX_TOKENS = int(os.getenv("AGENT_MAX_TOKENS", "1000"))
 
-# System prompt for the AI agent
+# Provider
+provider = AsyncOpenAI(
+    api_key=gemini_api_key,
+    base_url="https://generativelanguage.googleapis.com/v1beta/openai/" #baseUrl from (Gemini Documention from Openai SDK docs)
+)
+
+# Model
+model = OpenAIChatCompletionsModel(
+    model="gemini-2.5-flash",
+    openai_client=provider,
+)
+
+set_tracing_disabled(disabled=True)
+
 SYSTEM_PROMPT = """You are a helpful AI assistant for task management. You help users manage their todo tasks through natural language conversation.
 
 You have access to the following task management tools:
@@ -39,7 +42,6 @@ Guidelines:
 - When listing tasks, present them in a clear, readable format
 - When completing or deleting tasks, confirm the action was successful
 - If a user's intent is unclear, ask clarifying questions
-- Always use the user_id provided in the conversation context
 - Be concise but friendly in your responses
 
 Examples:

@@ -6,4 +6,4 @@ This package provides:
 - runner: Agent execution and conversation management
 """
 
-__all__ = ["config", "agent", "runner"]
+__all__ = ["gemini_config", "agent", "runner"]
