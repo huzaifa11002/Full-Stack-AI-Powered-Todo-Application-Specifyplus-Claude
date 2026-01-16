@@ -11,7 +11,7 @@ import { memo } from 'react';
 
 interface TaskItemProps {
   task: Task;
-  onToggleComplete: (taskId: string) => void;
+  onToggleComplete: (taskId: number) => void;
   onEdit?: (task: Task) => void;
   onDelete?: (task: Task) => void;
 }

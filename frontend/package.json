@@ -9,7 +9,9 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@openai/chatkit": "^1.3.0",
     "axios": "^1.13.2",
+    "date-fns": "^4.1.0",
     "next": "16.1.1",
     "react": "19.2.3",
     "react-dom": "19.2.3",

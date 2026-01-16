@@ -10,7 +10,7 @@ import { ApiError } from '@/types/api';
 // Create Axios instance
 const apiClient = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
-  timeout: 10000,
+  timeout: 60000, // Increased to 60 seconds for AI responses
   headers: {
     'Content-Type': 'application/json',
   },
