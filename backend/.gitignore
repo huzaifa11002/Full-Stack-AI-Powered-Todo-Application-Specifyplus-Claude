@@ -58,3 +58,14 @@ htmlcov/
 .mypy_cache/
 .dmypy.json
 dmypy.json
+
+# Backup files
+*.backup
+*.backup.*
+chat_agents/*.backup.*
+chat_agents/gemini_config.py.backup.*
+
+# Test scripts
+test_chat.py
+switch_to_openai.py
+*.test.log
