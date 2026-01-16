@@ -1,0 +1,331 @@
+RTANT)
+# ============================================
+
+# Keep example environment files
+!.env.example
+!backend/.env.example
+!frontend/.env.local.example
+
+# Keep README files
+!README.md
+!*/README.md
+
+# Keep documentation
+!docs/
+!*.md
+
+# Keep configuration examples
+!**/config.example.*
+!**/*.example.*
+state.gz
+
+# pnpm
+.pnpm-store/
+
+# ============================================
+# DOCKER (if used in future)
+# ============================================
+
+# Docker
+*.dockerignore
+docker-compose.override.yml
+.docker/
+
+# ============================================
+# MISC
+# ============================================
+
+# Certificates
+*.crt
+*.key
+*.pem
+
+# Archives
+*.zip
+*.tar
+*.tar.gz
+*.rar
+*.7z
+
+# Large files
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.iso
+
+# ============================================
+# KEEP THESE FILES (IMPOld-state.yml
+.yarn/install-=====
+# PROJECT SPECIFIC
+# ============================================
+
+# Chat agent backups
+backend/chat_agents/*.backup.*
+backend/chat_agents/gemini_config.py.backup.*
+
+# Test scripts output
+test_output/
+*.test.log
+
+# Uploaded files (if any)
+uploads/
+media/
+static/media/
+
+# User data
+user_data/
+data/
+
+# ============================================
+# PACKAGE MANAGERS
+# ============================================
+
+# npm
+package-lock.json.backup
+npm-shrinkwrap.json
+
+# Yarn
+.yarn/cache
+.yarn/unplugged
+.yarn/buis
+docs/_build/
+site/
+
+# =======================================ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.directory
+.Trash-*
+
+# ============================================
+# TEMPORARY FILES
+# ============================================
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+*.swp
+*.swo
+*~
+
+# Cache
+.cache/
+*.cache
+
+# ============================================
+# DOCUMENTATION & TEST FILES
+# ============================================
+
+# Test output files
+test_*.py.backup.*
+*_test_output.txt
+test_results/
+
+# Backup files
+*.backup.*
+backup/
+backups/
+
+# Documentation builds.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.g.*
+
+# ============================================
+# IDE / EDITOR
+# ============================================
+
+# VSCode
+.vscode/
+*.code-workspace
+
+# JetBrains IDEs (PyCharm, WebStorm, etc.)
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+.vim/
+
+# Emacs
+*~
+\#*\#
+.\#*
+
+# ============================================
+# OPERATING SYSTEM
+# ============================================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+Thumbog*
+yarn-error.log*
+.pnpm-debug.log*
+lerna-debug.log*
+
+# Server Logs
+logs/
+*.loercel
+
+# ============================================
+# LOGS
+# ============================================
+
+# Application Logs
+*.log
+npm-debug.log*
+yarn-debug.l=====
+
+# Dependencies
+node_modules/
+frontend/node_modules/
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# Testing
+/coverage
+frontend/coverage/
+
+# Next.js
+.next/
+frontend/.next/
+out/
+frontend/out/
+
+# Production
+build/
+frontend/build/
+
+# Turbopack
+.turbopack/
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+frontend/next-env.d.ts
+
+# Vercel
+.vtype checker
+.pyre/
+
+# Alembic (Database Migrations)
+backend/alembic/versions/*.pyc
+
+# ============================================
+# NODE.JS / FRONTEND
+# =======================================metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
+venv/
+ENV/
+env/
+.venv
+backend/venv/
+backend/ENV/
+
+# Testing
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+.hypothesis/
+pytest_cache/
+
+# MyPy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre *.pem
+*.p12
+*.pfx
+*.cer
+*.crt
+
+# Database Files
+*.db
+*.sqlite
+*.sqlite3
+*.sql
+
+# ============================================
+# PYTHON / BACKEND
+# ============================================
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Distribution / packaging
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-ITIGNORE FOR TODO APP
+# ============================================
+
+# ============================================
+# SENSITIVE FILES - NEVER COMMIT
+# ============================================
+
+# Environment Variables (CRITICAL - Contains API Keys & Secrets)
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+.env.test
+*.env
+backend/.env
+frontend/.env.local
+
+# API Keys & Secrets
+**/secrets/
+**/credentials/
+*.key
+# ============================================
+# ROOT .G
