@@ -1,0 +1,37 @@
+Thank you for installing {{ .Chart.Name }}!
+
+Your TODO application has been deployed to your local Kubernetes cluster.
+
+To access your application:
+
+1. Get the external IP address of your Minikube cluster:
+   minikube ip
+
+2. Access the frontend at:
+   http://localhost:30080 (or use minikube tunnel to access via external IP)
+
+3. Access the backend at:
+   http://localhost:30081 (or use minikube tunnel to access via external IP)
+
+4. To use minikube tunnel for external access (in a separate terminal):
+   minikube tunnel
+
+5. Check the status of your pods:
+   kubectl get pods -n {{ .Release.Namespace }}
+
+6. View application logs:
+   kubectl logs -f deployment/{{ include "todo-chatbot.component.fullname" (list "frontend" .) }}
+   kubectl logs -f deployment/{{ include "todo-chatbot.component.fullname" (list "backend" .) }}
+
+{{- if .Values.ingress.enabled }}
+{{- range $host := .Values.ingress.hosts }}
+  {{- range .paths }}
+  http{{ if $.Values.ingress.tls }}s{{ end }}://{{ $host.host }}{{ .path }}
+  {{- end }}
+{{- end }}
+{{- end }}
+
+For troubleshooting, check that:
+- Docker images (todo-app-frontend and todo-app-backend) are built and available locally
+- Minikube is running with sufficient resources
+- The ingress controller is enabled in Minikube: minikube addons enable ingress

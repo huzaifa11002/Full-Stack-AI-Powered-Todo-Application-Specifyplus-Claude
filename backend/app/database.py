@@ -15,7 +15,19 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Get database URL from environment variable
+# Support both direct DATABASE_URL and individual connection parameters
 DATABASE_URL = os.getenv("DATABASE_URL")
+
+if not DATABASE_URL:
+    # Construct DATABASE_URL from individual parameters
+    DATABASE_HOST = os.getenv("DATABASE_HOST", "localhost")
+    DATABASE_PORT = os.getenv("DATABASE_PORT", "5432")
+    DATABASE_NAME = os.getenv("DATABASE_NAME", "todo_db")
+    DATABASE_USER = os.getenv("DATABASE_USER", "postgres")
+    DATABASE_PASSWORD = os.getenv("DATABASE_PASSWORD", "password")
+    
+    # Build connection string
+    DATABASE_URL = f"postgresql://{DATABASE_USER}:{DATABASE_PASSWORD}@{DATABASE_HOST}:{DATABASE_PORT}/{DATABASE_NAME}"
 
 if not DATABASE_URL:
     raise ValueError(

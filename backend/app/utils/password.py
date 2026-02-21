@@ -1,66 +1,60 @@
-"""Password hashing and verification utilities using bcrypt.
+"""Password hashing and verification utilities using the bcrypt library directly.
 
 This module provides functions for:
 - Hashing passwords with bcrypt (cost factor 12)
 - Verifying passwords against bcrypt hashes
+- Handling the 72-byte limit consistently
 """
 
-from passlib.context import CryptContext
+import bcrypt
 
-# Create password context with bcrypt
-# Cost factor 12 provides good security/performance balance
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto", bcrypt__rounds=12)
-
+def _truncate_password(password: str) -> bytes:
+    """Truncate password to 72 bytes and return as bytes for bcrypt.
+    
+    Bcrypt has a hard limit of 72 bytes. This function safely truncates
+    passwords at UTF-8 character boundaries.
+    """
+    password_bytes = password.encode('utf-8')
+    if len(password_bytes) <= 72:
+        return password_bytes
+    
+    # Truncate to 72 bytes and handle UTF-8 character boundaries
+    truncated = password_bytes[:72]
+    # Decode and re-encode to ensure no partial characters at the boundary
+    return truncated.decode('utf-8', errors='ignore').encode('utf-8')
 
 def hash_password(password: str) -> str:
     """Hash a password using bcrypt.
-
-    Bcrypt has a maximum password length of 72 bytes. Passwords longer than
-    72 bytes are automatically truncated to prevent errors.
-
+    
     Args:
         password: Plain text password
-
+        
     Returns:
-        str: Bcrypt hashed password
-
-    Example:
-        >>> hashed = hash_password("mypassword123")
-        >>> print(hashed)
-        $2b$12$...
+        str: Bcrypt hashed password as a string
     """
-    # Bcrypt has a 72 byte limit - truncate if necessary
-    # Encode to bytes, truncate, then decode back to string
-    password_bytes = password.encode('utf-8')
-    if len(password_bytes) > 72:
-        password = password_bytes[:72].decode('utf-8', errors='ignore')
+    # 1. Truncate and convert to bytes
+    password_bytes = _truncate_password(password)
     
-    return pwd_context.hash(password)
-
+    # 2. Generate salt and hash
+    # rounds=12 is a good balance between security and performance
+    salt = bcrypt.gensalt(rounds=12)
+    hashed = bcrypt.hashpw(password_bytes, salt)
+    
+    # 3. Return as string for database storage
+    return hashed.decode('utf-8')
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify a password against a bcrypt hash.
-
-    Bcrypt has a maximum password length of 72 bytes. Passwords longer than
-    72 bytes are automatically truncated to match the hashing behavior.
-
-    Args:
-        plain_password: Plain text password to verify
-        hashed_password: Bcrypt hashed password from database
-
-    Returns:
-        bool: True if password matches, False otherwise
-
-    Example:
-        >>> hashed = hash_password("mypassword123")
-        >>> verify_password("mypassword123", hashed)
-        True
-        >>> verify_password("wrongpassword", hashed)
-        False
-    """
-    # Bcrypt has a 72 byte limit - truncate if necessary to match hash_password behavior
-    password_bytes = plain_password.encode('utf-8')
-    if len(password_bytes) > 72:
-        plain_password = password_bytes[:72].decode('utf-8', errors='ignore')
-    
-    return pwd_context.verify(plain_password, hashed_password)
+    print(f"DIAGNOSTIC: verify_password called with direct bcrypt module for password length: {len(plain_password)}")
+    try:
+        # 1. Truncate and convert to bytes
+        password_bytes = _truncate_password(plain_password)
+        
+        # 2. Convert hash string back to bytes for comparison
+        hash_bytes = hashed_password.encode('utf-8')
+        
+        # 3. Check password
+        return bcrypt.checkpw(password_bytes, hash_bytes)
+    except Exception as e:
+        # If there's any error in format, it's an invalid password/hash
+        print(f"Error during password verification: {e}")
+        return False

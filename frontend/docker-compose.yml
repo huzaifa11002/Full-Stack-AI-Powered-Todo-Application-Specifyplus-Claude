@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: todo-frontend-dev
+    ports:
+      - "3000:3000"
+    volumes:
+      # Bind mount for source code with watch mode
+      - .:/app
+      # Use named volume for node_modules to avoid overwriting
+      - /app/node_modules
+      # Use named volume for .next build cache
+      - /app/.next
+    env_file:
+      - .env.local
+    environment:
+      - NODE_ENV=development
+      - WATCHPACK_POLLING=true
+    develop:
+      watch:
+
+        # Watch for changes in public files
+        - action: sync
+          path: ./public
+          target: /app/public
+
+        # Watch for changes in app directory (Next.js 13+ app router)
+        - action: sync
+          path: ./app
+          target: /app/app
+          ignore:
+            - node_modules/
+
+        # Watch for config file changes and restart
+        - action: sync+restart
+          path: ./next.config.js
+          target: /app/next.config.js
+
+        # Watch for package.json changes and rebuild
+        - action: rebuild
+          path: ./package.json
+          target: /app/package.json
+
+    # Health check
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
