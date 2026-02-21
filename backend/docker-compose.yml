@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: todo-backend-dev
+    ports:
+      - "8000:8000"
+    volumes:
+      # Bind mount for source code with watch mode
+      - .:/app
+      # Use named volume for Python cache to avoid permission issues
+      - /app/__pycache__
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ENVIRONMENT=development
+    develop:
+      watch:
+        # Watch for changes in app directory and sync them
+        - action: sync
+          path: ./app
+          target: /app/app
+          ignore:
+            - __pycache__/
+            - "*.pyc"
+            - "*.pyo"
+            - "*.pyd"
+
+        # Watch for changes in other Python files
+        - action: sync
+          path: ./*.py
+          target: /app/
+          ignore:
+            - __pycache__/
+            - "*.pyc"
+
+        # Watch for requirements.txt changes and rebuild
+        - action: rebuild
+          path: ./requirements.txt
+          target: /app/requirements.txt
+
+        # Watch for .env file changes and restart
+        - action: sync+restart
+          path: ./.env
+          target: /app/.env
+
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

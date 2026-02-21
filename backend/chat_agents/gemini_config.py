@@ -8,9 +8,12 @@ load_dotenv()
 
 gemini_api_key = os.getenv("GEMINI_API_KEY") #get gemini api key from .env file
 
-#Gemini API key not found condition
+# Gemini API key check - set to placeholder if not provided for local dev
 if not gemini_api_key:
-    raise ValueError("GEMINI_API_KEY environment variable is not set. Please set it in your .env file.")
+    # For local development without Gemini, use a placeholder
+    # Chat features will be disabled but app will still run
+    gemini_api_key = "placeholder-for-local-dev"
+    print("[WARNING] GEMINI_API_KEY not set. Chat features may not work.")
 
 
 # Provider

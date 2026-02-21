@@ -29,6 +29,9 @@ async def lifespan(app: FastAPI):
     # Startup: Verify database connection
     print("Starting up FastAPI Todo API...")
     try:
+        print("DIAGNOSTIC: Backend starting up. Checking password module...")
+        from app.utils import password
+        print(f"DIAGNOSTIC: Password module file: {password.__file__}")
         with Session(engine) as session:
             # Test database connection
             session.exec(text("SELECT 1"))
@@ -59,11 +62,17 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Configure CORS middleware
-# Only allow requests from the frontend origin
+# Support multiple origins for k8s/minikube deployment
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
+CORS_ORIGINS = os.getenv("CORS_ORIGINS", FRONTEND_URL)
+# Parse comma-separated origins or use single URL
+allowed_origins = [origin.strip() for origin in CORS_ORIGINS.split(",")] if CORS_ORIGINS else [FRONTEND_URL]
+
+print(f"[CORS] Allowed origins: {allowed_origins}")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[FRONTEND_URL],  # Only allow frontend origin
+    allow_origins=allowed_origins,  # Support multiple origins
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
     allow_headers=["Content-Type", "Authorization"],
